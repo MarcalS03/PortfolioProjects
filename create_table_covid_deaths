@@ -1,0 +1,40 @@
+-- Creating a table with all the headers in the .csv file and adding their data type.
+CREATE TABLE public.covid_deaths(
+	iso_code CHAR(3),
+	continent VARCHAR(255),
+	location VARCHAR(255),
+	date DATE,
+	population BIGINT,
+	total_cases BIGINT,
+	new_cases INT,
+	new_cases_smoothed DOUBLE PRECISION,
+	total_deaths INT,
+	new_deaths INT,
+	new_deaths_smoothed DOUBLE PRECISION,
+	total_cases_per_million DOUBLE PRECISION,
+	new_cases_per_million DOUBLE PRECISION,
+	new_cases_smoothed_per_million DOUBLE PRECISION,
+	total_deaths_per_million DOUBLE PRECISION,
+	new_deaths_per_million DOUBLE PRECISION,
+	new_deaths_smoothed_per_million DOUBLE PRECISION,
+	reproduction_rate DOUBLE PRECISION,
+	icu_patients INT,
+	icu_patients_per_million DOUBLE PRECISION,
+	hosp_patients INT,
+	hosp_patients_per_million DOUBLE PRECISION,
+	weekly_icu_admissions INT,
+	weekly_icu_admissions_per_million DOUBLE PRECISION,
+	weekly_hosp_admissions INT,
+	weekly_hosp_admissions_per_million DOUBLE PRECISION,
+	total_tests BIGINT
+);
+
+-- Using select all from to make sure the table was created properly (data will not have any values at the moment, only columns/headers)
+SELECT * FROM public.covid_deaths
+
+-- Copying the .csv file from file path onto the desired table
+COPY public.covid_deaths FROM 'C:\Users\marca\Documents\Data Analytics\Portfolio Projects\Covid SQL Project\CovidDeaths.csv' WITH CSV HEADER;
+
+
+
+

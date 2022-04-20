@@ -1,0 +1,129 @@
+-- Selecting Data that I am going to be using and sorting it by the location and date.
+SELECT location, date, total_cases, new_cases, total_deaths, population
+FROM public.covid_deaths
+WHERE continent IS NOT NULL
+ORDER BY location, date;
+
+-- Shows likelihood of dying if you tracked Covid-19 in Ireland, as a percentage.
+SELECT location, date, total_cases, total_deaths, 
+(total_deaths*1.0/total_cases)*100 AS death_percentage 
+FROM public.covid_deaths
+WHERE location = 'Ireland' AND continent IS NOT NULL
+ORDER BY location, date;
+
+-- Shows the percentage of the population that tracked Covid-19 in Ireland.
+SELECT location, date,population, total_cases, 
+(total_cases*1.0/population)*100 AS infected_population 
+FROM public.covid_deaths
+WHERE location = 'Ireland' AND continent IS NOT NULL
+ORDER BY location, date;
+
+CREATE VIEW percentage_infected_ireland AS
+SELECT location, date,population, total_cases, 
+(total_cases*1.0/population)*100 AS infected_population 
+FROM public.covid_deaths
+WHERE location = 'Ireland' AND continent IS NOT NULL
+ORDER BY location, date;
+
+
+-- Looking at countries with highest infection rate compared to population
+SELECT location,population, MAX(total_cases) AS highest_infection_count, 
+MAX((total_cases*1.0/population))*100 AS infected_population 
+FROM public.covid_deaths
+WHERE continent IS NOT NULL
+GROUP BY location, population
+ORDER BY infected_population DESC, location;
+
+CREATE VIEW percentage_infected_country AS
+SELECT location,population, MAX(total_cases) AS highest_infection_count, 
+MAX((total_cases*1.0/population))*100 AS infected_population 
+FROM public.covid_deaths
+WHERE continent IS NOT NULL
+GROUP BY location, population
+ORDER BY infected_population DESC, location;
+
+-- Looking at countries with the highest death count compared to pupulation
+SELECT location,population, MAX(total_deaths) AS total_death_count 
+FROM public.covid_deaths
+WHERE continent IS NOT NULL
+GROUP BY location, population
+ORDER BY total_death_count DESC, location;
+
+CREATE VIEW death_count AS
+SELECT location,population, MAX(total_deaths) AS total_death_count 
+FROM public.covid_deaths
+WHERE continent IS NOT NULL
+GROUP BY location, population
+ORDER BY total_death_count DESC, location;
+
+
+-- Looking at continents with the highest death count compared to pupulation
+SELECT location, MAX(total_deaths) AS total_death_count 
+FROM public.covid_deaths
+WHERE continent IS NULL AND location NOT IN ('Upper middle income', 'High income', 'Lower middle income', 'Low income')
+GROUP BY location
+ORDER BY total_death_count DESC;
+
+CREATE VIEW death_count_continent AS
+SELECT location, MAX(total_deaths) AS total_death_count 
+FROM public.covid_deaths
+WHERE continent IS NULL AND location NOT IN ('Upper middle income', 'High income', 'Lower middle income', 'Low income')
+GROUP BY location
+ORDER BY total_death_count DESC;
+
+
+-- GLOBAL NUMBERS
+-- Showing the total cases reported, total deaths reported and death percentage according to the date, across the world.
+SELECT date, SUM(new_cases) AS total_cases, SUM(new_deaths) AS total_deaths, 
+	SUM(new_deaths*1.0)/SUM(new_cases)*100 AS death_percentage
+FROM public.covid_deaths
+WHERE continent IS NOT NULL
+GROUP BY date
+ORDER BY date;
+
+-- Showing the total cases reported, total deaths reported and death percentage across the world.
+SELECT SUM(new_cases) AS total_cases, SUM(new_deaths) AS total_deaths, 
+	SUM(new_deaths*1.0)/SUM(new_cases)*100 AS death_percentage
+FROM public.covid_deaths
+WHERE continent IS NOT NULL;
+
+-- Joining the covid_deaths and covid_vaccinations tables.
+SELECT *
+FROM public.covid_deaths dea
+JOIN public.covid_vaccinations vac
+	ON dea.location = vac.location
+	AND dea.date = vac.date
+WHERE continent IS NOT NULL;
+
+
+
+-- USING CTE
+-- Looking at Total Population VS Vaccinations
+WITH population_vs_vaccination (continent, location, date, population, new_vaccinations, total_people_vaccinated)
+AS
+
+(
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+	, SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location
+	, dea.date) AS total_people_vaccinated
+FROM public.covid_deaths dea
+JOIN public.covid_vaccinations vac
+	ON dea.location = vac.location
+	AND dea.date = vac.date
+WHERE dea.continent IS NOT NULL
+)
+SELECT *, (total_people_vaccinated*1.0/population)*100 AS percentage_vaccinated
+FROM population_vs_vaccination
+
+
+-- Creting view to store data in for later visualization.
+CREATE VIEW percentage_vaccinated AS
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+	, SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location
+	, dea.date) AS total_people_vaccinated
+FROM public.covid_deaths dea
+JOIN public.covid_vaccinations vac
+	ON dea.location = vac.location
+	AND dea.date = vac.date
+WHERE dea.continent IS NOT NULL
+
